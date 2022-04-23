@@ -18,7 +18,9 @@ contract Metacubes is ERC721, ERC721Burnable, Ownable {
   bool public refundMode = false;
   address public contestWinner;
 
+
   string private hashedPassword;
+  string private quorum = 70;
 
   mapping(uint256 => bool) private _voteRecord;
 
@@ -53,6 +55,7 @@ contract Metacubes is ERC721, ERC721Burnable, Ownable {
   function guessPassword(uint256 tokenID, string memory password) public returns (uint256) {
       // TODO: implement
       // require contest occuring
+      require(isContestOccuring(), "The contest is not occuring");
       // require caller is owner of tokenid
       // require payment of 0.01 ether
       // require(hashedPassword == keccak256(password));
@@ -63,21 +66,33 @@ contract Metacubes is ERC721, ERC721Burnable, Ownable {
       return 0;
   }
 
-  function voteToStartContest() public {
+  function voteToStartContest(uint256 tokenID) public {
       // TODO: implement
       // require contest ready
+      require(contestReady, "The contest is not ready to start");
+      // requiure token in caller wallet
       // require _voteRecord[token] false
+      require(_voteRecord[tokenID] == false, "This token has already voted");
       // increment votesToStart
-      // _voteRecord[token] = true
+      _voteRecord[tokenID] = true;
+     votesToStart.increment();
+
+
   }
 
   function startContest() public {
-      // TODO: implement
       // require contest ready
+      require(contestReady, "The contest is not ready to start");
       // require votesToStart > quorum
+      require(current(votesToStart) > quorum, "Not enough votes to start. A quorum of 70 is needed to start");
       // require not refund mode
-      
+      require(!refundMode, "The contract is in refund mode and the contest can not be started.");
       // set contest started
+      contestStarted = true;
+  }
+
+    function isContestOccuring() private view returns (bool) {
+      return contestReady && contestStarted && !refundMode;
   }
 
   function toggleContestReady() public onlyOwner {
